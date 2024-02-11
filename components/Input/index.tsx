@@ -8,7 +8,7 @@ const Input = ({ name, value, placeholder, onChange }: InputProps) => {
       value={value}
       placeholder={placeholder}
       onChange={onChange}
-      className="border py-1 w-40 rounded-xl"
+      className="w-full border p-2 rounded-xl"
     ></input>
   );
 };

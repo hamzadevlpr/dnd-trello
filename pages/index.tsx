@@ -1,6 +1,8 @@
-import { useState } from "react";
+"use client";
+import { useEffect, useState } from "react";
 import { v4 as uuidv4 } from "uuid";
 
+import Navbar from "../components/Navbar";
 // DnD
 import {
   DndContext,
@@ -29,6 +31,8 @@ import Items from "@/components/Item";
 import Modal from "@/components/Modal";
 import Input from "@/components/Input";
 import { Button } from "@/components/Button";
+import { Toaster } from "react-hot-toast";
+import { useRouter } from "next/navigation";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -50,6 +54,8 @@ export default function Home() {
   const [itemName, setItemName] = useState("");
   const [showAddContainerModal, setShowAddContainerModal] = useState(false);
   const [showAddItemModal, setShowAddItemModal] = useState(false);
+  const [userEmail, setUserEmail] = useState("");
+  const router = useRouter();
 
   const onAddContainer = () => {
     if (!containerName) return;
@@ -62,10 +68,10 @@ export default function Home() {
         items: [],
       },
     ]);
+
     setContainerName("");
     setShowAddContainerModal(false);
   };
-
   const onAddItem = () => {
     if (!itemName) return;
     const id = `item-${uuidv4()}`;
@@ -75,6 +81,7 @@ export default function Home() {
       id,
       title: itemName,
     });
+    console.log(container.items);
     setContainers([...containers]);
     setItemName("");
     setShowAddItemModal(false);
@@ -329,112 +336,133 @@ export default function Home() {
     setContainers(updatedContainers);
   };
 
+  useEffect(() => {
+    const user = localStorage.getItem("user");
+    const userData = JSON.parse(user as string);
+    if (userData) {
+      setUserEmail(userData);
+    } else {
+      router.push("/login");
+    }
+  }, [router]);
+
   return (
-    <div className="rounded-2xl m-10 p-10 glass-effect border border-black py-10">
-      <Modal
-        showModal={showAddContainerModal}
-        setShowModal={setShowAddContainerModal}
-      >
-        <div className="flex flex-col w-full items-start gap-y-4">
-          <h1 className="text-gray-800 text-3xl font-bold">Add Column</h1>
-          <Input
-            type="text"
-            placeholder="Container Title"
-            name="containername"
-            value={containerName}
-            onChange={(e) => setContainerName(e.target.value)}
-          />
-          <Button onClick={onAddContainer}>Add Column</Button>
-        </div>
-      </Modal>
-      <Modal showModal={showAddItemModal} setShowModal={setShowAddItemModal}>
-        <div className="flex flex-col w-full items-start gap-y-4">
-          <h1 className="text-gray-800 text-3xl font-bold">Add Item</h1>
-          <Input
-            type="text"
-            placeholder="Item Title"
-            name="itemname"
-            value={itemName}
-            onChange={(e) => setItemName(e.target.value)}
-          />
-          <Button onClick={onAddItem}>Add Item</Button>
-        </div>
-      </Modal>
+    <>
+      {userEmail ? (
+        <>
+          <div className="relative h-full rounded-2xl m-10 glass-effect p-2">
+            {/* add column modal */}
+            <Modal
+              showModal={showAddContainerModal}
+              setShowModal={setShowAddContainerModal}
+            >
+              <div className="flex flex-col w-full items-start gap-y-4">
+                <h1 className="text-gray-800 text-3xl font-bold">Add Column</h1>
+                <Input
+                  type="text"
+                  placeholder="Container Title"
+                  name="containername"
+                  value={containerName}
+                  onChange={(e) => setContainerName(e.target.value)}
+                />
+                <Button onClick={onAddContainer}>Add Column</Button>
+              </div>
+            </Modal>
 
-      <div className="flex items-center justify-between gap-y-2">
-        <h1 className="text-gray-800 text-3xl font-bold">Trello</h1>
-        <Button
-          className="bg-pink-600"
-          onClick={() => setShowAddContainerModal(true)}
-        >
-          Add Column
-        </Button>
-      </div>
+            {/* add item modal */}
+            <Modal
+              showModal={showAddItemModal}
+              setShowModal={setShowAddItemModal}
+            >
+              <div className="flex flex-col w-full items-start gap-y-4">
+                <h1 className="text-gray-800 text-3xl font-bold">Add Item</h1>
+                <Input
+                  type="text"
+                  placeholder="Item Title"
+                  name="itemname"
+                  value={itemName}
+                  onChange={(e) => setItemName(e.target.value)}
+                />
+                <Button onClick={onAddItem}>Add Item</Button>
+              </div>
+            </Modal>
 
-      <div className="mt-10">
-        <div className="flex flex-wrap justify-center md:justify-start gap-6">
-          <DndContext
-            sensors={sensors}
-            collisionDetection={closestCorners}
-            onDragStart={handleDragStart}
-            onDragMove={handleDragMove}
-            onDragEnd={handleDragEnd}
-          >
-            <SortableContext items={containers.map((i) => i.id)}>
-              {containers.map((container) => (
-                <Container
-                  id={container.id}
-                  title={container.title}
-                  key={container.id}
-                  onDeleteContainer={onDeleteContainer}
-                  onAddItem={() => {
-                    setShowAddItemModal(true);
-                    setCurrentContainerId(container.id);
-                  }}
-                >
-                  <SortableContext items={container.items.map((i) => i.id)}>
-                    <div className="flex items-start flex-col gap-y-4">
-                      {container.items.map((i) => (
+            {/* top navbar */}
+            <Navbar />
+
+            <Button
+              className="my-2 glass-effect"
+              onClick={() => setShowAddContainerModal(true)}
+            >
+              Add Column
+            </Button>
+
+            <div className="flex flex-wrap justify-center lg:justify-start md:justify-center gap-6 px-3">
+              <DndContext
+                sensors={sensors}
+                collisionDetection={closestCorners}
+                onDragStart={handleDragStart}
+                onDragMove={handleDragMove}
+                onDragEnd={handleDragEnd}
+              >
+                <SortableContext items={containers.map((i) => i.id)}>
+                  {containers.map((container) => (
+                    <Container
+                      id={container.id}
+                      title={container.title}
+                      key={container.id}
+                      onDeleteContainer={onDeleteContainer}
+                      onAddItem={() => {
+                        setShowAddItemModal(true);
+                        setCurrentContainerId(container.id);
+                      }}
+                    >
+                      <SortableContext items={container.items.map((i) => i.id)}>
+                        <div className="flex items-start flex-col gap-y-4">
+                          {container.items.map((i) => (
+                            <Items
+                              title={i.title}
+                              id={i.id}
+                              key={i.id}
+                              onDelete={() => handleDeleteItem(i.id)}
+                            />
+                          ))}
+                        </div>
+                      </SortableContext>
+                    </Container>
+                  ))}
+                </SortableContext>
+                <DragOverlay adjustScale={false}>
+                  {activeId && activeId.toString().includes("item") && (
+                    <Items
+                      id={activeId}
+                      title={findItemTitle(activeId)}
+                      onDelete={() => handleDeleteItem(activeId)}
+                    />
+                  )}
+                  {activeId && activeId.toString().includes("container") && (
+                    <Container
+                      id={activeId}
+                      title={findContainerTitle(activeId)}
+                      onDeleteContainer={onDeleteContainer}
+                    >
+                      {findContainerItems(activeId).map((i) => (
                         <Items
+                          key={i.id}
                           title={i.title}
                           id={i.id}
-                          key={i.id}
                           onDelete={() => handleDeleteItem(i.id)}
                         />
                       ))}
-                    </div>
-                  </SortableContext>
-                </Container>
-              ))}
-            </SortableContext>
-            <DragOverlay adjustScale={false}>
-              {activeId && activeId.toString().includes("item") && (
-                <Items
-                  id={activeId}
-                  title={findItemTitle(activeId)}
-                  onDelete={() => handleDeleteItem(activeId)}
-                />
-              )}
-              {activeId && activeId.toString().includes("container") && (
-                <Container
-                  id={activeId}
-                  title={findContainerTitle(activeId)}
-                  onDeleteContainer={onDeleteContainer}
-                >
-                  {findContainerItems(activeId).map((i) => (
-                    <Items
-                      key={i.id}
-                      title={i.title}
-                      id={i.id}
-                      onDelete={() => handleDeleteItem(i.id)}
-                    />
-                  ))}
-                </Container>
-              )}
-            </DragOverlay>
-          </DndContext>
-        </div>
-      </div>
-    </div>
+                    </Container>
+                  )}
+                </DragOverlay>
+              </DndContext>
+            </div>
+          </div>
+          <Toaster />
+        </>
+      ) : null}
+    </>
   );
 }
