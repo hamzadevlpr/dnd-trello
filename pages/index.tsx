@@ -77,6 +77,7 @@ export default function Home() {
         items: [],
       },
     ]);
+
     setContainerName("");
     setShowAddContainerModal(false);
   };
@@ -97,7 +98,7 @@ export default function Home() {
       id,
       title: itemName,
     });
-    console.log(container.items);
+
     setContainers([...containers]);
     setItemName("");
     setShowAddItemModal(false);
@@ -338,16 +339,32 @@ export default function Home() {
   }
 
   const handleDeleteItem = (itemId: UniqueIdentifier) => {
-    const updatedContainers = containers.map((container) => ({
-      ...container,
-      items: container.items.filter((item) => item.id !== itemId),
-    }));
-    setContainers(updatedContainers);
-    const itemRef = ref(
-      database,
-      `users/${userEmail}/columns/${currentContainerId}/items/${itemId}`
-    );
-    remove(itemRef);
+    let currentContainerId: UniqueIdentifier | undefined;
+
+    const updatedContainers = containers.map((container) => {
+      const updatedItems = container.items.filter((item) => {
+        if (item.id === itemId) {
+          // Set the current container id when the item is found
+          currentContainerId = container.id;
+          return false; // Exclude the item from the updated items
+        }
+        return true;
+      });
+
+      return {
+        ...container,
+        items: updatedItems,
+      };
+    });
+
+    if (currentContainerId) {
+      const itemRef = ref(
+        database,
+        `users/${userEmail}/columns/${currentContainerId}/items/${itemId}`
+      );
+      remove(itemRef);
+      setContainers(updatedContainers);
+    }
   };
 
   const onDeleteContainer = (containerId: UniqueIdentifier) => {
@@ -368,6 +385,34 @@ export default function Home() {
 
     if (userData) {
       setUserEmail(userData.uid);
+
+      // Fetch data from Firebase and update local state
+      // if i remove these line of code, the drag and drop will work other wise it will not work
+      const columnsRef = ref(database, `users/${userData.uid}/columns`);
+
+      onValue(columnsRef, (snapshot) => {
+        const data = snapshot.val();
+        if (data) {
+          const containersData = Object.keys(data).map((containerId) => {
+            const container = data[containerId];
+            const itemsData = container.items
+              ? Object.keys(container.items).map((itemId) => ({
+                  id: itemId,
+                  title: container.items[itemId].title,
+                }))
+              : [];
+
+            return {
+              id: containerId,
+              title: container.title,
+              items: itemsData,
+            };
+          });
+
+          setContainers(containersData);
+        }
+      });
+      // if i remove these line of code, the drag and drop will work other wise it will not work
     } else {
       router.push("/login");
     }

@@ -16,7 +16,6 @@ const Container = ({
   const {
     attributes,
     setNodeRef,
-    listeners,
     transform,
     transition,
     isDragging,
@@ -35,11 +34,11 @@ const Container = ({
         transform: CSS.Translate.toString(transform),
       }}
       className={clsx(
-        "w-80 h-96 bg-gray-200  rounded-xl flex flex-col gap-y-4",
+        "w-80 h-96 bg-gray-200  rounded-xl flex flex-col items-center gap-y-4",
         isDragging && "opacity-50"
       )}
     >
-      <div className="flex items-center justify-between bg-gray-300 rounded-t-xl px-2 py-3">
+      <div className="w-full flex items-center justify-between bg-gray-300 rounded-t-xl px-2 py-3">
         <div className="flex flex-col gap-y-1">
           <h1 className="text-gray-700 text-xl font-medium">{title}</h1>
           <p className="text-gray-400 text-sm">{description}</p>
@@ -64,32 +63,26 @@ const Container = ({
               />
             </svg>
           </button>
-          <button
-            className="border p-2 text-xs rounded-xl shadow-lg hover:shadow-xl"
-            {...listeners}
-          >
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              fill="none"
-              viewBox="0 0 24 24"
-              strokeWidth={1.5}
-              stroke="currentColor"
-              className="w-4 h-4 text-gray-800"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                d="M10.05 4.575a1.575 1.575 0 1 0-3.15 0v3m3.15-3v-1.5a1.575 1.575 0 0 1 3.15 0v1.5m-3.15 0 .075 5.925m3.075.75V4.575m0 0a1.575 1.575 0 0 1 3.15 0V15M6.9 7.575a1.575 1.575 0 1 0-3.15 0v8.175a6.75 6.75 0 0 0 6.75 6.75h2.018a5.25 5.25 0 0 0 3.712-1.538l1.732-1.732a5.25 5.25 0 0 0 1.538-3.712l.003-2.024a.668.668 0 0 1 .198-.471 1.575 1.575 0 1 0-2.228-2.228 3.818 3.818 0 0 0-1.12 2.687M6.9 7.575V12m6.27 4.318A4.49 4.49 0 0 1 16.35 15m.002 0h-.002"
-              />
-            </svg>
-          </button>
         </div>
       </div>
 
       {children}
-      <Button variant="ghost" onClick={onAddItem}>
-        Add Item
-      </Button>
+      <button className="m-2 text-gray-800 w-10 h-10 flex rounded-full border-2 border-gray-800 justify-center items-center" onClick={onAddItem}>
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          fill="none"
+          viewBox="0 0 24 24"
+          strokeWidth={1.5}
+          stroke="currentColor"
+          className="w-8 h-8"
+        >
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            d="M12 4.5v15m7.5-7.5h-15"
+          />
+        </svg>
+      </button>
     </div>
   );
 };

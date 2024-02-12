@@ -1,9 +1,12 @@
 import { UniqueIdentifier } from "@dnd-kit/core";
 import { useSortable } from "@dnd-kit/sortable";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { CSS } from "@dnd-kit/utilities";
 import clsx from "clsx";
 import Input from "../Input/index";
+import { database } from "../firebase";
+import { ref, remove } from "firebase/database";
+import { useRouter } from "next/navigation";
 
 type ItemsType = {
   id: UniqueIdentifier;
@@ -28,9 +31,24 @@ const Items = ({ id, title, onDelete }: ItemsType) => {
     },
   });
 
+  const [userEmail, setUserEmail] = useState("");
+  const router = useRouter();
+
+  useEffect(() => {
+    const user = localStorage.getItem("user");
+    const userData = JSON.parse(user as string);
+
+    if (userData) {
+      setUserEmail(userData.uid);
+    } else {
+      router.push("/login");
+    }
+  }, [router]);
+
   const handleDelete = () => {
     // Call the onDelete callback with the item's id
     onDelete(id);
+    
   };
   const handleEdit = () => {
     setEditing(true);
