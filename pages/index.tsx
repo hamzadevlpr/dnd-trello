@@ -35,6 +35,7 @@ import { Toaster } from "react-hot-toast";
 import { useRouter } from "next/navigation";
 import { child, get, onValue, push, ref, remove, set } from "firebase/database";
 import { database } from "@/components/firebase";
+import clsx from "clsx";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -44,6 +45,7 @@ type DNDType = {
   items: {
     id: UniqueIdentifier;
     title: string;
+    itemId: UniqueIdentifier | null;
   }[];
 };
 
@@ -81,6 +83,7 @@ export default function Home() {
     setContainerName("");
     setShowAddContainerModal(false);
   };
+
   const onAddItem = () => {
     if (!itemName) return;
     const id = `item-${uuidv4()}`;
@@ -91,15 +94,25 @@ export default function Home() {
       `users/${userEmail}/columns/${currentContainerId}/items`
     );
     const newItemRef = push(itemsRef);
-    set(newItemRef, {
-      title: itemName,
-    });
-    container.items.push({
-      id,
-      title: itemName,
-    });
+    const newItemId = newItemRef.key;
 
-    setContainers([...containers]);
+    if (newItemId) {
+      set(newItemRef, {
+        id: id,
+        title: itemName,
+        itemId: newItemId,
+      });
+      container.items.push({
+        id: id,
+        title: itemName,
+        itemId: newItemId,
+      });
+      setContainers([...containers]);
+      console.log([...containers]);
+    } else {
+      console.error("Failed to get newItemId");
+    }
+
     setItemName("");
     setShowAddItemModal(false);
   };
@@ -150,7 +163,6 @@ export default function Home() {
 
   const handleDragMove = (event: DragMoveEvent) => {
     const { active, over } = event;
-
     if (
       active.id.toString().includes("item") &&
       over?.id.toString().includes("item") &&
@@ -164,10 +176,10 @@ export default function Home() {
       if (!activeContainer || !overContainer) return;
 
       const activeContainerIndex = containers.findIndex(
-        (container) => container.id === activeContainer.id
+        (container) => container.id === activeContainer.id.toString()
       );
       const overContainerIndex = containers.findIndex(
-        (container) => container.id === overContainer.id
+        (container) => container.id === overContainer.id.toString()
       );
 
       const activeitemIndex = activeContainer.items.findIndex(
@@ -186,6 +198,13 @@ export default function Home() {
         );
 
         setContainers(newItems);
+
+        // update the database here  with the new order of items in a container
+        const itemsRef = ref(
+          database,
+          `users/${userEmail}/columns/${activeContainer.id}/items/`
+        );
+        set(itemsRef, newItems[activeContainerIndex].items);
       } else {
         let newItems = [...containers];
         const [removeditem] = newItems[activeContainerIndex].items.splice(
@@ -198,6 +217,18 @@ export default function Home() {
           removeditem
         );
         setContainers(newItems);
+        // Update Firebase Realtime Database with the new order of items within a container
+        const activeItemsRef = ref(
+          database,
+          `users/${userEmail}/columns/${activeContainer.id}/items`
+        );
+        set(activeItemsRef, newItems[activeContainerIndex].items);
+
+        const overItemsRef = ref(
+          database,
+          `users/${userEmail}/columns/${overContainer.id}/items`
+        );
+        set(overItemsRef, newItems[overContainerIndex].items);
       }
     }
 
@@ -344,19 +375,17 @@ export default function Home() {
     const updatedContainers = containers.map((container) => {
       const updatedItems = container.items.filter((item) => {
         if (item.id === itemId) {
-          // Set the current container id when the item is found
           currentContainerId = container.id;
-          return false; // Exclude the item from the updated items
+
+          return false; 
         }
         return true;
       });
-
       return {
         ...container,
         items: updatedItems,
       };
     });
-
     if (currentContainerId) {
       const itemRef = ref(
         database,
@@ -386,7 +415,6 @@ export default function Home() {
     if (userData) {
       setUserEmail(userData.uid);
 
-      // Fetch data from Firebase and update local state
       // if i remove these line of code, the drag and drop will work other wise it will not work
       const columnsRef = ref(database, `users/${userData.uid}/columns`);
 
@@ -397,8 +425,9 @@ export default function Home() {
             const container = data[containerId];
             const itemsData = container.items
               ? Object.keys(container.items).map((itemId) => ({
-                  id: itemId,
+                  id: container.items[itemId].id,
                   title: container.items[itemId].title,
+                  itemId: container.items[itemId].itemId,
                 }))
               : [];
 
