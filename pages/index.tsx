@@ -33,6 +33,8 @@ import Input from "@/components/Input";
 import { Button } from "@/components/Button";
 import { Toaster } from "react-hot-toast";
 import { useRouter } from "next/navigation";
+import { child, get, onValue, push, ref, remove, set } from "firebase/database";
+import { database } from "@/components/firebase";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -60,15 +62,21 @@ export default function Home() {
   const onAddContainer = () => {
     if (!containerName) return;
     const id = `container-${uuidv4()}`;
+    const columnsRef = ref(database, `users/${userEmail}/columns`);
+    const newColumnRef = push(columnsRef);
+    set(newColumnRef, {
+      title: containerName,
+      items: [],
+    });
+    // Update local state
     setContainers([
       ...containers,
       {
-        id,
+        id: newColumnRef.key as UniqueIdentifier,
         title: containerName,
         items: [],
       },
     ]);
-
     setContainerName("");
     setShowAddContainerModal(false);
   };
@@ -77,6 +85,14 @@ export default function Home() {
     const id = `item-${uuidv4()}`;
     const container = containers.find((item) => item.id === currentContainerId);
     if (!container) return;
+    const itemsRef = ref(
+      database,
+      `users/${userEmail}/columns/${currentContainerId}/items`
+    );
+    const newItemRef = push(itemsRef);
+    set(newItemRef, {
+      title: itemName,
+    });
     container.items.push({
       id,
       title: itemName,
@@ -327,6 +343,11 @@ export default function Home() {
       items: container.items.filter((item) => item.id !== itemId),
     }));
     setContainers(updatedContainers);
+    const itemRef = ref(
+      database,
+      `users/${userEmail}/columns/${currentContainerId}/items/${itemId}`
+    );
+    remove(itemRef);
   };
 
   const onDeleteContainer = (containerId: UniqueIdentifier) => {
@@ -334,13 +355,19 @@ export default function Home() {
       (container) => container.id !== containerId
     );
     setContainers(updatedContainers);
+    const containerRef = ref(
+      database,
+      `users/${userEmail}/columns/${containerId}`
+    );
+    remove(containerRef);
   };
 
   useEffect(() => {
     const user = localStorage.getItem("user");
     const userData = JSON.parse(user as string);
+
     if (userData) {
-      setUserEmail(userData);
+      setUserEmail(userData.uid);
     } else {
       router.push("/login");
     }

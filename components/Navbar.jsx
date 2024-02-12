@@ -2,9 +2,25 @@
 import React, { useEffect, useState } from "react";
 import Image from "next/image";
 import logo from "../components/assets/logo.png";
+import { signOut } from "firebase/auth";
+import { auth } from "../components/firebase";
+import toast from "react-hot-toast";
+import { useRouter } from "next/navigation";
 
 function Navbar() {
   const [userEmail, setUserEmail] = useState("");
+  const router = useRouter();
+  const handleSignOut = async () => {
+    try {
+      // Sign out the current user
+      localStorage.removeItem("user");
+      await signOut(auth);
+      toast.success("Sign out successful");
+      router.push("/login");
+    } catch (error) {
+      console.error("Error signing out:", error);
+    }
+  };
 
   useEffect(() => {
     // get user email from local storage and set it to userEmail
@@ -30,7 +46,7 @@ function Navbar() {
         />
         {/* sign out button */}
         <button
-          // onClick={handleSignOut}
+          onClick={handleSignOut}
           className="bg-white bg-opacity-40  py-3 px-5 text-sm font-bold text-white rounded-xl "
         >
           Sign out

@@ -1,12 +1,12 @@
-'use client';
+"use client";
 
-import { useCallback, useEffect, useRef } from 'react';
-import FocusTrap from 'focus-trap-react';
-import { AnimatePresence, motion } from 'framer-motion';
-import clsx from 'clsx';
+import { useCallback, useEffect, useRef } from "react";
+// import FocusTrap from 'focus-trap-react';
+import { AnimatePresence, motion } from "framer-motion";
+import clsx from "clsx";
 
 // Types
-import ModalProps from './modal.type';
+import ModalProps from "./modal.type";
 
 export default function Modal({
   children,
@@ -18,46 +18,44 @@ export default function Modal({
 
   const onKeyDown = useCallback(
     (e: KeyboardEvent) => {
-      if (e.key === 'Escape') {
+      if (e.key === "Escape") {
         setShowModal(false);
       }
     },
-    [setShowModal],
+    [setShowModal]
   );
 
   useEffect(() => {
-    document.addEventListener('keydown', onKeyDown);
-    return () => document.removeEventListener('keydown', onKeyDown);
+    document.addEventListener("keydown", onKeyDown);
+    return () => document.removeEventListener("keydown", onKeyDown);
   }, [onKeyDown]);
 
   return (
     <AnimatePresence>
       {showModal && (
         <>
-          <FocusTrap focusTrapOptions={{ initialFocus: false }}>
-            <motion.div
-              ref={desktopModalRef}
-              key="desktop-modal"
-              className="fixed inset-0 z-40 hidden min-h-screen items-center justify-center md:flex"
-              initial={{ scale: 0.95, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.95, opacity: 0 }}
-              onMouseDown={(e) => {
-                if (desktopModalRef.current === e.target) {
-                  setShowModal(false);
-                }
-              }}
+          <motion.div
+            ref={desktopModalRef}
+            key="desktop-modal"
+            className="fixed inset-0 z-40 hidden min-h-screen items-center justify-center md:flex"
+            initial={{ scale: 0.95, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            exit={{ scale: 0.95, opacity: 0 }}
+            onMouseDown={(e) => {
+              if (desktopModalRef.current === e.target) {
+                setShowModal(false);
+              }
+            }}
+          >
+            <div
+              className={clsx(
+                `overflow relative w-full max-w-lg transform rounded-xl glass-effect p-6 text-left shadow-2xl transition-all`,
+                containerClasses
+              )}
             >
-              <div
-                className={clsx(
-                  `overflow relative w-full max-w-lg transform rounded-xl glass-effect p-6 text-left shadow-2xl transition-all`,
-                  containerClasses,
-                )}
-              >
-                {children}
-              </div>
-            </motion.div>
-          </FocusTrap>
+              {children}
+            </div>
+          </motion.div>
           <motion.div
             key="desktop-backdrop"
             className="fixed inset-0 z-30 bg-[#ec4899] bg-opacity-10 backdrop-filter backdrop-blur-sm"
