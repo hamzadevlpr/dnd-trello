@@ -5,16 +5,24 @@ import { CSS } from "@dnd-kit/utilities";
 import clsx from "clsx";
 import Input from "../Input/index";
 import { database } from "../firebase";
-import { ref, remove } from "firebase/database";
+import { ref, remove, update } from "firebase/database";
 import { useRouter } from "next/navigation";
 
 type ItemsType = {
   id: UniqueIdentifier;
   title: string;
   onDelete: (id: UniqueIdentifier) => void;
+  currentContainerId: UniqueIdentifier;
+  itemId: UniqueIdentifier | null;
 };
 
-const Items = ({ id, title, onDelete }: ItemsType) => {
+const Items = ({
+  id,
+  title,
+  onDelete,
+  currentContainerId,
+  itemId,
+}: ItemsType) => {
   const [editedTitle, setEditedTitle] = useState(title);
   const [isEditing, setEditing] = useState(false);
   const {
@@ -46,28 +54,27 @@ const Items = ({ id, title, onDelete }: ItemsType) => {
   }, [router]);
 
   const handleDelete = () => {
-    // Call the onDelete callback with the item's id
     onDelete(id);
-    
   };
   const handleEdit = () => {
     setEditing(true);
   };
 
   const handleSaveEdit = () => {
-    // Save the edited title and exit edit mode
     setEditing(false);
-    // You may want to perform additional validation or checks here before saving
+    const itemRef = ref(
+      database,
+      `users/${userEmail}/columns/${currentContainerId}/items/${itemId}`
+    );
+    update(itemRef, { title: editedTitle });
   };
 
   const handleCancelEdit = () => {
-    // Cancel the edit and revert to the original title
     setEditing(false);
     setEditedTitle(title);
   };
 
   const handleTitleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    // Update the edited title as the user types
     setEditedTitle(e.target.value);
   };
   return (

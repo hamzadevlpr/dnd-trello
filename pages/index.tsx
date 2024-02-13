@@ -196,16 +196,8 @@ export default function Home() {
           activeitemIndex,
           overitemIndex
         );
-
-        setContainers(newItems);
-
-        // update the database here  with the new order of items in a container
-        const itemsRef = ref(
-          database,
-          `users/${userEmail}/columns/${activeContainer.id}/items/`
-        );
-        set(itemsRef, newItems[activeContainerIndex].items);
       } else {
+        // different container
         let newItems = [...containers];
         const [removeditem] = newItems[activeContainerIndex].items.splice(
           activeitemIndex,
@@ -217,18 +209,6 @@ export default function Home() {
           removeditem
         );
         setContainers(newItems);
-        // Update Firebase Realtime Database with the new order of items within a container
-        const activeItemsRef = ref(
-          database,
-          `users/${userEmail}/columns/${activeContainer.id}/items`
-        );
-        set(activeItemsRef, newItems[activeContainerIndex].items);
-
-        const overItemsRef = ref(
-          database,
-          `users/${userEmail}/columns/${overContainer.id}/items`
-        );
-        set(overItemsRef, newItems[overContainerIndex].items);
       }
     }
 
@@ -371,13 +351,14 @@ export default function Home() {
 
   const handleDeleteItem = (itemId: UniqueIdentifier) => {
     let currentContainerId: UniqueIdentifier | undefined;
+    let currentItemId: UniqueIdentifier | null = null;
 
     const updatedContainers = containers.map((container) => {
       const updatedItems = container.items.filter((item) => {
         if (item.id === itemId) {
           currentContainerId = container.id;
-
-          return false; 
+          currentItemId = item.itemId;
+          return false;
         }
         return true;
       });
@@ -386,14 +367,12 @@ export default function Home() {
         items: updatedItems,
       };
     });
-    if (currentContainerId) {
-      const itemRef = ref(
-        database,
-        `users/${userEmail}/columns/${currentContainerId}/items/${itemId}`
-      );
-      remove(itemRef);
-      setContainers(updatedContainers);
-    }
+    const containerRef = ref(
+      database,
+      `users/${userEmail}/columns/${currentContainerId}/items/${currentItemId}`
+    );
+    remove(containerRef);
+    setContainers(updatedContainers);
   };
 
   const onDeleteContainer = (containerId: UniqueIdentifier) => {
@@ -415,7 +394,6 @@ export default function Home() {
     if (userData) {
       setUserEmail(userData.uid);
 
-      // if i remove these line of code, the drag and drop will work other wise it will not work
       const columnsRef = ref(database, `users/${userData.uid}/columns`);
 
       onValue(columnsRef, (snapshot) => {
@@ -441,7 +419,6 @@ export default function Home() {
           setContainers(containersData);
         }
       });
-      // if i remove these line of code, the drag and drop will work other wise it will not work
     } else {
       router.push("/login");
     }
@@ -525,7 +502,9 @@ export default function Home() {
                               title={i.title}
                               id={i.id}
                               key={i.id}
+                              itemId={i.itemId}
                               onDelete={() => handleDeleteItem(i.id)}
+                              currentContainerId={container.id}
                             />
                           ))}
                         </div>
@@ -539,6 +518,8 @@ export default function Home() {
                       id={activeId}
                       title={findItemTitle(activeId)}
                       onDelete={() => handleDeleteItem(activeId)}
+                      currentContainerId={activeId}
+                      itemId={activeId}
                     />
                   )}
                   {activeId && activeId.toString().includes("container") && (
@@ -552,7 +533,9 @@ export default function Home() {
                           key={i.id}
                           title={i.title}
                           id={i.id}
+                          itemId={activeId}
                           onDelete={() => handleDeleteItem(i.id)}
+                          currentContainerId={activeId}
                         />
                       ))}
                     </Container>
