@@ -86,7 +86,7 @@ const Items = ({
         transform: CSS.Translate.toString(transform),
       }}
       className={clsx(
-        "px-2 py-2 mx-2 bg-gray-50 shadow-md rounded-xl w-[19rem] border border-transparent hover:border-gray-200 cursor-pointer",
+        "px-2 py-2 mx-2 bg-gray-50 shadow-md rounded-xl min-w-[16rem] border border-transparent hover:border-gray-200 cursor-pointer",
         isDragging && "opacity-50"
       )}
     >
